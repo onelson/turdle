@@ -81,7 +81,7 @@ impl FromStr for Column {
                 i
             ));
         }
-        return Ok(col);
+        Ok(col)
     }
 }
 
