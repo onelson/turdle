@@ -55,10 +55,7 @@ fn main() {
     let fixed: Vec<_> = [opts.one, opts.two, opts.three, opts.four, opts.five]
         .into_iter()
         .enumerate()
-        .filter_map(|(i, c)| match c {
-            Some(c) => Some((i, c.to_ascii_lowercase())),
-            None => None,
-        })
+        .filter_map(|(i, c)| c.map(|c| (i, c.to_ascii_lowercase())))
         .collect();
 
     let displaced: Vec<(usize, Vec<char>)> = [
@@ -87,19 +84,14 @@ fn main() {
             }
         }
 
-        if !fixed.is_empty() {
-            if !fixed.iter().all(|(i, c)| &xs[*i] == c) {
-                return false;
-            }
+        if !fixed.is_empty() && !fixed.iter().all(|(i, c)| &xs[*i] == c) {
+            return false;
         }
 
-        if !displaced.is_empty() {
-            if !displaced
+        if !displaced.is_empty() && !displaced
                 .iter()
-                .all(|(i, cs)| cs.iter().all(|c| &xs[*i] != c && xs.contains(c)))
-            {
-                return false;
-            }
+                .all(|(i, cs)| cs.iter().all(|c| &xs[*i] != c && xs.contains(c))) {
+            return false;
         }
         true
     }) {

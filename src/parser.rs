@@ -9,11 +9,12 @@ use nom::{
     sequence::separated_pair,
     IResult,
 };
+use std::str::FromStr;
 
 #[derive(Debug, PartialEq)]
-struct Column {
-    fixed: Option<char>,
-    displaced: Option<Vec<char>>,
+pub struct Column {
+    pub fixed: Option<char>,
+    pub displaced: Option<Vec<char>>,
 }
 
 fn char_parser(i: &str) -> IResult<&str, char> {
@@ -43,6 +44,17 @@ fn fixed_only(i: &str) -> IResult<&str, Column> {
     ))
 }
 
+fn empty(i: &str) -> IResult<&str, Column> {
+    let (i, _) = char_(':')(i)?;
+    Ok((
+        i,
+        Column {
+            fixed: None,
+            displaced: None,
+        },
+    ))
+}
+
 fn displaced_only(i: &str) -> IResult<&str, Column> {
     let (i, cs) = preceded(char_(':'), many1(char_parser))(i)?;
     Ok((
@@ -55,7 +67,22 @@ fn displaced_only(i: &str) -> IResult<&str, Column> {
 }
 
 fn column_parser(i: &str) -> IResult<&str, Column> {
-    alt((fixed_and_displaced, fixed_only, displaced_only))(i)
+    alt((fixed_and_displaced, fixed_only, displaced_only, empty))(i)
+}
+
+impl FromStr for Column {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (i, col) = column_parser(s).map_err(|e| format!("{}", e))?;
+        if !i.is_empty() {
+            return Err(format!(
+                "expected all input to be consumed, got remainder: {}",
+                i
+            ));
+        }
+        return Ok(col);
+    }
 }
 
 #[cfg(test)]

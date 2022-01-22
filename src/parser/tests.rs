@@ -38,3 +38,16 @@ fn test_displaced_only() {
     assert_eq!(got.fixed, want.fixed);
     assert_eq!(got.displaced, want.displaced);
 }
+
+#[test]
+fn test_neither() {
+    let i = ":";
+    let (remaining, got) = column_parser(i).expect("parser");
+    let want = Column {
+        fixed: None,
+        displaced: None,
+    };
+    assert!(remaining.is_empty());
+    assert_eq!(got.fixed, want.fixed);
+    assert_eq!(got.displaced, want.displaced);
+}
