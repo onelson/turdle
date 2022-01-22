@@ -1,5 +1,7 @@
 use structopt::StructOpt;
 
+mod parser;
+
 const DATA: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/data/words.txt"));
 
 fn build_bank() -> Vec<[char; 5]> {
