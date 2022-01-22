@@ -1,4 +1,7 @@
+use crate::parser::Column;
 use structopt::StructOpt;
+
+mod parser;
 
 const DATA: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/data/words.txt"));
 
@@ -22,26 +25,11 @@ fn build_bank() -> Vec<[char; 5]> {
 #[derive(Debug, StructOpt)]
 #[structopt(name = "turdle", about = "Suggest guesses for an ongoing Wordle game.")]
 struct Opts {
-    #[structopt(short = "1")]
-    one: Option<char>,
-    #[structopt(short = "2")]
-    two: Option<char>,
-    #[structopt(short = "3")]
-    three: Option<char>,
-    #[structopt(short = "4")]
-    four: Option<char>,
-    #[structopt(short = "5")]
-    five: Option<char>,
-    #[structopt(long = "x1")]
-    not_one: Option<String>,
-    #[structopt(long = "x2")]
-    not_two: Option<String>,
-    #[structopt(long = "x3")]
-    not_three: Option<String>,
-    #[structopt(long = "x4")]
-    not_four: Option<String>,
-    #[structopt(long = "x5")]
-    not_five: Option<String>,
+    one: Column,
+    two: Column,
+    three: Column,
+    four: Column,
+    five: Column,
     #[structopt(long)]
     exclude: Option<String>,
 }
@@ -50,32 +38,7 @@ fn main() {
     let opts: Opts = Opts::from_args();
     let bank = build_bank();
 
-    let fixed: Vec<_> = [opts.one, opts.two, opts.three, opts.four, opts.five]
-        .into_iter()
-        .enumerate()
-        .filter_map(|(i, c)| match c {
-            Some(c) => Some((i, c.to_ascii_lowercase())),
-            None => None,
-        })
-        .collect();
-
-    let displaced: Vec<(usize, Vec<char>)> = [
-        opts.not_one,
-        opts.not_two,
-        opts.not_three,
-        opts.not_four,
-        opts.not_five,
-    ]
-    .into_iter()
-    .enumerate()
-    .filter_map(|(i, cs)| match cs {
-        Some(cs) if !cs.is_empty() => {
-            Some((i, cs.chars().map(|c| c.to_ascii_lowercase()).collect()))
-        }
-        _ => None,
-    })
-    .collect();
-
+    let columns = [opts.one, opts.two, opts.three, opts.four, opts.five];
     let exclude = opts.exclude.map(|s| s.trim().chars().collect::<Vec<_>>());
 
     for candidate in bank.iter().filter(|xs| {
@@ -85,18 +48,19 @@ fn main() {
             }
         }
 
-        if !fixed.is_empty() {
-            if !fixed.iter().all(|(i, c)| &xs[*i] == c) {
-                return false;
+        for (idx, column) in columns.iter().enumerate() {
+            if let Some(fixed) = &column.fixed {
+                if &xs[idx] != fixed {
+                    return false;
+                }
             }
-        }
 
-        if !displaced.is_empty() {
-            if !displaced
-                .iter()
-                .all(|(i, cs)| cs.iter().all(|c| &xs[*i] != c && xs.contains(c)))
-            {
-                return false;
+            if let Some(displaced) = &column.displaced {
+                if !displaced.is_empty()
+                    && !displaced.iter().all(|c| &xs[idx] != c && xs.contains(c))
+                {
+                    return false;
+                }
             }
         }
         true
